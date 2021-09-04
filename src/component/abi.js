@@ -4,9 +4,9 @@ import BigNumber from 'bignumber.js'
 import {Toast} from 'antd-mobile'
 
 const config = {
-    name: "UBS Foundation",
+    name: "UBS Foundation V1.5",
     contractAddress: "4pxhiT1cw95CZa7u82SEghwtfRVBiYBJXGrDDAzzWfCRXvMNrseStwuPC5HCXTfpgCguDgKb2ER5Kqin7gBAt1mN",
-    github: "https://github.com/ubsgame/ubsfund",
+    github: "https://github.com/ubsgame/foundation",
     author: "ubsgame",
     url: document.location.href,
     logo: document.location.protocol + '//' + document.location.host + '/logo.png',
