@@ -38,6 +38,7 @@ class Ubs extends Component {
             lang: "Language",
             myShare:0,
             uconPool:0,
+            uconShare:0,
         }
     }
 
@@ -50,9 +51,18 @@ class Ubs extends Component {
             self.setState({info: info});
         })
         abi.getMyState(mainPkr,function (rest){
+            let value=new BigNumber(rest[0]);
+            let total=new BigNumber(rest[1]);
+            let ucon=new BigNumber(rest[2]);
+            let dec=new BigNumber(10).pow(18);
+
+            let uconPool=ucon.dividedBy(dec).toFixed(4,1);
+            let myShare=total.toNumber()>0?value.multipliedBy(100).dividedBy(total).toFixed(4,1):0;
+            let uconShare=total.toNumber()>0?ucon.multipliedBy(value).dividedBy(total).dividedBy(dec).toFixed(4,1):0;
             self.setState({
-                uconPool:new BigNumber(rest[2]).dividedBy(new BigNumber(10).pow(18)).toFixed(4,1),
-                myShare: rest[1].toNumber()>0?new BigNumber(rest[0]).multipliedBy(100).dividedBy(new BigNumber(rest[1])).toFixed(4,1):0
+                uconPool,
+                myShare,
+                uconShare,
             });
         })
     }
@@ -399,12 +409,6 @@ class Ubs extends Component {
                                         <span className="title">{language.e().account.title}</span>
                                     </Flex.Item>
                                     <Flex.Item style={{flex:2}}>
-                                        {myShare>0 && <span className="my-share"><Badge text={`${language.e().account.rate}: ${myShare}%`}  style={{ marginLeft: 12, padding: '5px',fontSize:'12px',fontWeight:600, backgroundColor: '#21b68a', borderRadius: 5 }} /></span>}
-                                    </Flex.Item>
-                                    <Flex.Item style={{flex:2}}>
-                                        {uconPool>0 && <span className="my-share"><Badge text={`${language.e().account.uconPool}: ${uconPool}`}  style={{ marginLeft: 0, padding: '5px',fontSize:'12px',fontWeight:600, backgroundColor: '#2141b6', borderRadius: 5 }} /></span>}
-                                    </Flex.Item>
-                                    <Flex.Item style={{flex:2}}>
                                         <Button
                                             style={{width: '87px', float: 'right'}}
                                             disabled={sameDay(Math.ceil(new Date().getTime() / 1000), this.state.details.staticTimestamp) || this.state.details.staticReward === 0}
@@ -530,6 +534,22 @@ class Ubs extends Component {
                         </List.Item>
                     </List>
                 </WingBlank>
+
+                <WhiteSpace size="lg"/>
+
+                <WingBlank size="lg">
+                    <List renderHeader={<span className="title">{language.e().account.fundTitle}</span>}>
+                        <List.Item>
+                        {myShare>0 && <div>
+                                <span className="my-share"><Badge text={`${language.e().account.rate}: ${myShare}%`}  style={{ marginLeft: 0, padding: '2px',fontSize:'13px',fontWeight:600, backgroundColor: '#21b68a', borderRadius: 4 }} /></span>
+                        </div>}
+                        {uconPool>0 && <div>
+                                <span className="my-share"><Badge text={`${language.e().account.uconPool}: ${uconPool} UCON`}  style={{ marginLeft: 0, padding: '2px',fontSize:'13px',fontWeight:600, backgroundColor: '#2141b6', borderRadius: 4 }} /></span>
+                        </div>}
+                        </List.Item>
+                    </List>
+                </WingBlank>
+
                 <WhiteSpace size="lg"/>
 
                 <WingBlank size="lg">
