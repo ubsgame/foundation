@@ -39,10 +39,14 @@ class Ubs extends Component {
             myShare:0,
             uconPool:0,
             uconShare:0,
+            pos:{
+                value:0,
+                share:0,
+            }
         }
     }
 
-    initAccount(mainPkr) {
+    initAccount= async (mainPkr)=>{
         let self = this;
         abi.details(mainPkr, "", function (details) {
             self.setState({details: details});
@@ -65,6 +69,18 @@ class Ubs extends Component {
                 uconShare,
             });
         })
+        abi.getMyPosState(mainPkr,function (rest){
+            let value=new BigNumber(rest[0]);
+            let eff=new BigNumber(rest[1]);
+            let total=new BigNumber(rest[2]);
+            let dec=new BigNumber(10).pow(18);
+            let pos={
+                value:value.dividedBy(dec).toFixed(4,1),
+                share:total.toNumber()>0?eff.multipliedBy(100).dividedBy(total).toFixed(4,1):0
+            };
+            console.log(pos);
+            self.setState({pos})
+        })
     }
 
     componentDidMount() {
@@ -72,12 +88,34 @@ class Ubs extends Component {
         abi.OnInit
             .then(() => {
                 abi.accountList(function (accounts) {
-
-                    self.initAccount(accounts[0].mainPKr);
-                    self.setState({account: accounts[0]});
-                    self.timer = setInterval(function () {
-                        self.initAccount(self.state.account.mainPKr);
-                    }, 10 * 1000);
+                    if(accounts && accounts.length>0){
+                        let account = accounts[0];
+                        let mainPkr = localStorage.getItem("mainPKr");
+                        if(mainPkr){
+                            for(let act of accounts){
+                                if(act.mainPKr === mainPkr){
+                                    account = act;
+                                    break;
+                                }
+                            }
+                        }
+                        self.setState({account: account});
+                        let tickInitAccount=(acc)=>{
+                            if (!acc) {
+                                acc=self.state.account;
+                            }
+                            self.initAccount(acc.mainPKr).then(()=>{
+                                setTimeout(()=>{
+                                    tickInitAccount();
+                                },20*1000)
+                            }).catch((e)=>{
+                                setTimeout(()=>{
+                                    tickInitAccount();
+                                },30*1000)
+                            });
+                        };
+                        tickInitAccount(account);
+                    }
                 });
             }).catch(() => {
             alert("init failed")
@@ -155,6 +193,44 @@ class Ubs extends Component {
                 },
             ]);
         }
+    }
+
+    staking() {
+        let self = this;
+        let inputs = <div>
+            <InputItem type='money' clear moneyKeyboardAlign='left' ref={el => {
+                this.stakingInput = el
+            }} placeholder=">=10"><span>{language.e().account.modal.value}:</span></InputItem>
+        </div>
+        Modal.alert(<span>{language.e().account.staking}</span>, inputs, [
+            {text: <span>{language.e().account.modal.cancel}</span>},
+            {
+                text: <span>{language.e().account.modal.submit}</span>, onPress: () => {
+                    let value = new BigNumber(self.stakingInput.state.value).multipliedBy(1e18).toNumber();
+                    abi.depositPos(this.state.account.pk, this.state.account.mainPKr, value, function (ret) {
+                    });
+                }
+            },
+        ]);
+    }
+
+    withdrawPos(max) {
+        let self = this;
+        let inputs = <div>
+            <InputItem type='money' clear moneyKeyboardAlign='left' ref={el => {
+                this.withdrawPosInput = el
+            }} placeholder={`<=${max}`}><span>{language.e().account.modal.value}:</span></InputItem>
+        </div>
+        Modal.alert(<span>{language.e().account.withdraw}</span>, inputs, [
+            {text: <span>{language.e().account.modal.cancel}</span>},
+            {
+                text: <span>{language.e().account.modal.submit}</span>, onPress: () => {
+                    let value = new BigNumber(self.withdrawPosInput.state.value).multipliedBy(1e18).toNumber();
+                    abi.withdrawPos(this.state.account.pk, this.state.account.mainPKr, value, function (ret) {
+                    });
+                }
+            },
+        ]);
     }
 
     takePartIn() {
@@ -317,7 +393,7 @@ class Ubs extends Component {
 
     render() {
         let self = this;
-        const {myShare,uconPool} = this.state;
+        const {myShare,uconPool,pos} = this.state;
         let achievement = this.state.details.values[0];
         let items = this.state.details.values.map(function (value, index) {
             let statue;
@@ -538,14 +614,54 @@ class Ubs extends Component {
                 <WhiteSpace size="lg"/>
 
                 <WingBlank size="lg">
-                    {myShare>0 && <List renderHeader={<span className="title">{language.e().account.fundTitle}</span>}>
+                    {/*myShare>0 &&*/ <List renderHeader={<span className="title">{language.e().account.fundTitle}</span>}>
                         <List.Item>
-                        {myShare>0 && <div>
-                                <span className="my-share"><Badge text={`${language.e().account.rate}: ${myShare}%`}  style={{ marginLeft: 0, padding: '2px',fontSize:'13px',fontWeight:600, backgroundColor: '#21b68a', borderRadius: 4 }} /></span>
-                        </div>}
-                        {uconPool>0 && <div>
-                                <span className="my-share"><Badge text={`${language.e().account.uconPool}: ${uconPool} UCON`}  style={{ marginLeft: 0, padding: '2px',fontSize:'13px',fontWeight:600, backgroundColor: '#2141b6', borderRadius: 4 }} /></span>
-                        </div>}
+                            <div style={{float: 'left', width: '30%'}}>
+                                <span>{language.e().account.rateSERO}:</span>
+                            </div>
+                            <div style={{float: 'left', width: '40%'}}>
+                                <span>{myShare}%</span>
+                            </div>
+                        </List.Item>
+                        <List.Item>
+                            <div style={{float: 'left', width: '30%'}}>
+                                <span>{language.e().account.rateUCON}:</span>
+                            </div>
+                            <div style={{float: 'left', width: '40%'}}>
+                                <span>{pos.share}%</span>
+                            </div>
+                        </List.Item>
+                        <List.Item>
+                            <div
+                                style={{float: 'left', width: '30%'}}><span
+                            >{language.e().account.stakingUCON}:</span>
+                            </div>
+                            <div style={{float: 'left', width: '40%'}}>
+                                <span>{pos.value}</span>
+                                {pos.value>100&&<span style={{color:"red"}}> (↑{pos.value>300?0.3:(pos.value>200?0.2:(0.1))})</span>}
+                            </div>
+                            <div style={{float: 'right', width: '30%'}}>
+                                <div style={{float: 'right',marginLeft:'2px'}}>
+                                    <Button
+                                        onClick={() => {
+                                            this.withdrawPos(pos.value)
+                                        }}>{language.e().account.withdraw}</Button>
+                                </div>
+                                <div style={{float: 'right'}}>
+                                    <Button
+                                        onClick={() => {
+                                            this.staking()
+                                        }}>{language.e().account.staking}</Button>
+                                </div>
+                            </div>
+                        </List.Item>
+                        <List.Item>
+                            <div style={{float: 'left', width: '30%'}}>
+                                <span>{language.e().account.uconPool}:</span>
+                            </div>
+                            <div style={{float: 'left', width: '40%'}}>
+                                <span>{uconPool} UCON</span>
+                            </div>
                         </List.Item>
                     </List>}
                 </WingBlank>

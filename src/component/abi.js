@@ -124,6 +124,9 @@ const abiV2 =[{"constant":false,"inputs":[{"name":"_sender","type":"address"},{"
 
 const contractV2 = serojs.callContract(abiV2, caddressV2);
 
+const caddressV3 = "5mxVMLx57JqZQMK3SFkv9pLf7dchF7Fc8ybJTrirH4CJhrDSVhDvxNV27jfuYju8S6qKQdEXEvqxf2ty4agpiUW1";
+const abiV3=[{"constant":true,"inputs":[],"name":"getValues","outputs":[{"name":"ret_start_time","type":"uint256"},{"name":"ret_last_time","type":"uint256"},{"name":"ret_base","type":"uint256"},{"name":"ret_values","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"_addr","type":"address"}],"name":"getState","outputs":[{"name":"value","type":"uint256"},{"name":"eff","type":"uint256"},{"name":"total","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_value","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"getMyState","outputs":[{"name":"value","type":"uint256"},{"name":"eff","type":"uint256"},{"name":"total","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getTotal","outputs":[{"name":"total","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_value","type":"uint256"}],"name":"setMinDeposit","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"x","type":"bytes32"}],"name":"bytes32ToString","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"pure","type":"function"},{"constant":true,"inputs":[{"name":"_addr","type":"address"}],"name":"getMarked","outputs":[{"name":"ret_last_time","type":"uint256"},{"name":"ret_value","type":"uint256"},{"name":"ret_base","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_data","type":"bytes"}],"name":"update","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_addr0","type":"address"},{"name":"_addr1","type":"address"}],"name":"getState2","outputs":[{"name":"value0","type":"uint256"},{"name":"value1","type":"uint256"},{"name":"eff0","type":"uint256"},{"name":"eff1","type":"uint256"},{"name":"total","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"deposit","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"name":"_fund","type":"address"}],"name":"setFoundation","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"changeStart","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_addr","type":"address"}],"name":"proxyDeposit","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"},{"indexed":true,"name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"}];
+const contractV3 = serojs.callContract(abiV3, caddressV3);
 
 class Abi {
 
@@ -242,6 +245,21 @@ class Abi {
         });
     }
 
+    getMyPosState(from,callback) {
+        this.callMethodV3('getMyState', from, [], function (vals) {
+            console.log("pos state: ",vals)
+            if (vals !== "0x0") {
+                callback(vals);
+            }
+        });
+    }
+    depositPos(from, mainPKr, value, callback) {
+        this.executeMethodV3('deposit', from, mainPKr, [], value, callback);
+    }
+    withdrawPos(from, mainPKr, value, callback) {
+        this.executeMethodV3('withdraw', from, mainPKr, [value], 0, callback);
+    }
+
     callMethod(_method, from, _args, callback) {
         let that = this;
         let packData = contract.packData(_method, _args);
@@ -283,6 +301,25 @@ class Abi {
         });
     }
 
+    callMethodV3(_method, from, _args, callback) {
+        let packData = contractV3.packData(_method, _args);
+        let callParams = {
+            from: from,
+            to: caddressV3,
+            data: packData
+        }
+
+        seropp.call(callParams, function (callData) {
+            if (callData !== "0x") {
+                let res = contractV3.unPackData(_method, callData);
+                if (callback) {
+                    callback(res);
+                }
+            } else {
+                callback("0x0");
+            }
+        });
+    }
 
     executeMethod(_method, from, mainPKr, args, value, callback) {
         let that = this;
@@ -334,6 +371,41 @@ class Abi {
         let estimateParam = {
             from: mainPKr,
             to: caddressV2,
+            value: "0x" + value.toString(16),
+            data: packData,
+            gasPrice: "0x" + new BigNumber("1000000000").toString(16),
+            cy: "SERO",
+        }
+        seropp.estimateGas(estimateParam, function (gas, err) {
+            if (err) {
+                Toast.fail("Unknow Gas Limit")
+            } else {
+                let gasNum = new BigNumber(gas);
+                executeData["gas"] = "0x" + new BigNumber(gasNum.multipliedBy(1.1).toFixed(0)).toString(16);
+                console.log("executeData", executeData);
+
+                seropp.executeContract(executeData, function (res) {
+                    if (callback) {
+                        callback(res)
+                    }
+                })
+            }
+        });
+    }
+
+    executeMethodV3(_method, from, mainPKr, args, value, callback) {
+        let packData = contractV3.packData(_method, args);
+        let executeData = {
+            from: from,
+            to: caddressV3,
+            value: "0x" + value.toString(16),
+            data: packData,
+            gasPrice: "0x" + new BigNumber("1000000000").toString(16),
+            cy: "SERO",
+        };
+        let estimateParam = {
+            from: mainPKr,
+            to: caddressV3,
             value: "0x" + value.toString(16),
             data: packData,
             gasPrice: "0x" + new BigNumber("1000000000").toString(16),
