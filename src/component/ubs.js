@@ -638,7 +638,7 @@ class Ubs extends Component {
                             </div>
                             <div style={{float: 'left', width: '40%'}}>
                                 <span>{pos.value}</span>
-                                {pos.value>100&&<span style={{color:"red"}}> (↑{pos.value>300?0.3:(pos.value>200?0.2:(0.1))})</span>}
+                                {pos.value>100&&<span style={{color:"red"}}> (↑{pos.value>300?30:(pos.value>200?20:(10))})%</span>}
                             </div>
                             <div style={{float: 'right', width: '30%'}}>
                                 <div style={{float: 'right',marginLeft:'2px'}}>
