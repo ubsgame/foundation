@@ -61,7 +61,7 @@ class Ubs extends Component {
             let dec=new BigNumber(10).pow(18);
 
             let uconPool=ucon.dividedBy(dec).toFixed(4,1);
-            let myShare=total.toNumber()>0?value.multipliedBy(100).dividedBy(total).toFixed(4,1):0;
+            let myShare=total.toNumber()>0?value.multipliedBy(200).dividedBy(total).toFixed(4,1):0;
             let uconShare=total.toNumber()>0?ucon.multipliedBy(value).dividedBy(total).dividedBy(dec).toFixed(4,1):0;
             self.setState({
                 uconPool,
@@ -76,7 +76,7 @@ class Ubs extends Component {
             let dec=new BigNumber(10).pow(18);
             let pos={
                 value:value.dividedBy(dec).toFixed(4,1),
-                share:total.toNumber()>0?eff.multipliedBy(100).dividedBy(total).toFixed(4,1):0
+                share:total.toNumber()>0?eff.multipliedBy(200).dividedBy(total).toFixed(4,1):0
             };
             console.log(pos);
             self.setState({pos})
@@ -614,7 +614,7 @@ class Ubs extends Component {
                 <WhiteSpace size="lg"/>
 
                 <WingBlank size="lg">
-                    {/*myShare>0 &&*/ <List renderHeader={<span className="title">{language.e().account.fundTitle}</span>}>
+                    {myShare>0 && <List renderHeader={<span className="title">{language.e().account.fundTitle}</span>}>
                         <List.Item>
                             <div style={{float: 'left', width: '30%'}}>
                                 <span>{language.e().account.rateSERO}:</span>
@@ -643,6 +643,7 @@ class Ubs extends Component {
                             <div style={{float: 'right', width: '30%'}}>
                                 <div style={{float: 'right',marginLeft:'2px'}}>
                                     <Button
+                                        disabled={!((pos.value>0)&&(pos.share>0))}
                                         onClick={() => {
                                             this.withdrawPos(pos.value)
                                         }}>{language.e().account.withdraw}</Button>
