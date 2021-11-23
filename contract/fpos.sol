@@ -358,7 +358,7 @@ contract FPos is Ownable,SeroInterface {
         if(eff==0) {
             return;
         }
-        if(ori<minDeposit) {
+        if(ori<=minDeposit) {
             eff=0;
             return;
         }

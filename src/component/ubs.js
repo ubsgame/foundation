@@ -61,7 +61,7 @@ class Ubs extends Component {
             let dec=new BigNumber(10).pow(18);
 
             let uconPool=ucon.dividedBy(dec).toFixed(4,1);
-            let myShare=total.toNumber()>0?value.multipliedBy(200).dividedBy(total).toFixed(4,1):0;
+            let myShare=total.toNumber()>0?value.multipliedBy(50).dividedBy(total).toFixed(4,1):0;
             let uconShare=total.toNumber()>0?ucon.multipliedBy(value).dividedBy(total).dividedBy(dec).toFixed(4,1):0;
             self.setState({
                 uconPool,
@@ -76,7 +76,7 @@ class Ubs extends Component {
             let dec=new BigNumber(10).pow(18);
             let pos={
                 value:value.dividedBy(dec).toFixed(4,1),
-                share:total.toNumber()>0?eff.multipliedBy(200).dividedBy(total).toFixed(4,1):0
+                share:total.toNumber()>0?eff.multipliedBy(50).dividedBy(total).toFixed(4,1):0
             };
             console.log(pos);
             self.setState({pos})
