@@ -40,6 +40,7 @@ class Ubs extends Component {
             uconPool:0,
             uconShare:0,
             pos:{
+                free:false,
                 value:0,
                 share:0,
             }
@@ -61,7 +62,7 @@ class Ubs extends Component {
             let dec=new BigNumber(10).pow(18);
 
             let uconPool=ucon.dividedBy(dec).toFixed(4,1);
-            let myShare=total.toNumber()>0?value.multipliedBy(50).dividedBy(total).toFixed(4,1):0;
+            let myShare=total.toNumber()>0?value.multipliedBy(100).dividedBy(total).toFixed(4,1):0;
             let uconShare=total.toNumber()>0?ucon.multipliedBy(value).dividedBy(total).dividedBy(dec).toFixed(4,1):0;
             self.setState({
                 uconPool,
@@ -70,13 +71,15 @@ class Ubs extends Component {
             });
         })
         abi.getMyPosState(mainPkr,function (rest){
-            let value=new BigNumber(rest[0]);
-            let eff=new BigNumber(rest[1]);
-            let total=new BigNumber(rest[2]);
+            let free=rest[0];
+            let value=new BigNumber(rest[1]);
+            let eff=new BigNumber(rest[2]);
+            let total=new BigNumber(rest[3]);
             let dec=new BigNumber(10).pow(18);
             let pos={
+                free,
                 value:value.dividedBy(dec).toFixed(4,1),
-                share:total.toNumber()>0?eff.multipliedBy(50).dividedBy(total).toFixed(4,1):0
+                share:total.toNumber()>0?eff.multipliedBy(100).dividedBy(total).toFixed(4,1):0
             };
             console.log(pos);
             self.setState({pos})
@@ -195,12 +198,12 @@ class Ubs extends Component {
         }
     }
 
-    staking() {
+    staking(max) {
         let self = this;
         let inputs = <div>
             <InputItem type='money' clear moneyKeyboardAlign='left' ref={el => {
                 this.stakingInput = el
-            }} placeholder=">=10"><span>{language.e().account.modal.value}:</span></InputItem>
+            }} placeholder={`>${max}`}><span>{language.e().account.modal.value}:</span></InputItem>
         </div>
         Modal.alert(<span>{language.e().account.staking}</span>, inputs, [
             {text: <span>{language.e().account.modal.cancel}</span>},
@@ -641,17 +644,27 @@ class Ubs extends Component {
                                 {pos.value>100&&<span style={{color:"red"}}> (↑{pos.value>300?30:(pos.value>200?20:(10))})%</span>}
                             </div>
                             <div style={{float: 'right', width: '30%'}}>
-                                <div style={{float: 'right',marginLeft:'2px'}}>
+                                <div style={{width:"30px",float: 'right',marginLeft:'2px'}}>
                                     <Button
-                                        disabled={false/*!((pos.value>0)&&(pos.share>0))*/}
+                                        disabled={!((pos.value>50)||(pos.value>0&&pos.free))}
                                         onClick={() => {
-                                            this.withdrawPos(pos.value)
-                                        }}>{language.e().account.withdraw}</Button>
+                                            let max=pos.value;
+                                            if (!pos.free) {
+                                                if (pos.value>50) {
+                                                    max = pos.value - 50;
+                                                }
+                                            }
+                                            this.withdrawPos(max)
+                                        }}>{language.e().account.unstaking}</Button>
                                 </div>
-                                <div style={{float: 'right'}}>
+                                <div style={{width:"30px",float: 'right'}}>
                                     <Button
                                         onClick={() => {
-                                            this.staking()
+                                            let min=1;
+                                            if (pos.value<50) {
+                                                min=50-pos.value;
+                                            }
+                                            this.staking(min);
                                         }}>{language.e().account.staking}</Button>
                                 </div>
                             </div>
