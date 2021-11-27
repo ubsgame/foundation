@@ -643,7 +643,7 @@ class Ubs extends Component {
                             <div style={{float: 'right', width: '30%'}}>
                                 <div style={{float: 'right',marginLeft:'2px'}}>
                                     <Button
-                                        disabled={!((pos.value>0)&&(pos.share>0))}
+                                        disabled={false/*!((pos.value>0)&&(pos.share>0))*/}
                                         onClick={() => {
                                             this.withdrawPos(pos.value)
                                         }}>{language.e().account.withdraw}</Button>

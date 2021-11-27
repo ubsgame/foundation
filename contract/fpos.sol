@@ -337,7 +337,7 @@ contract FPos is Ownable,SeroInterface {
     function getTotal() public view returns(uint256 total) {
         total=base+(now-last_time).mul(values);
     }
-    function getState(address _addr) public view returns(uint256 ori,uint256 eff,uint256 total) {
+    function getState(address _addr) public view returns(bool free,uint256 ori,uint256 eff,uint256 total) {
         Marked storage _user=indexs[_addr];
         if(_user.last_time<start_time) {
             eff=(now-start_time).mul(_user.eff);
@@ -345,16 +345,17 @@ contract FPos is Ownable,SeroInterface {
             eff=_user.base+(now-_user.last_time).mul(_user.eff);
         }
         ori=_user.ori;
+        free=_user.free;
         total=getTotal();
     }
     
     function getState2(address _addr0,address _addr1) public view returns(uint256 ori0,uint256 ori1,uint256 eff0,uint256 eff1,uint256 total) {
-        (ori0,eff0,total)=getState(_addr0);
-        (ori1,eff1,total)=getState(_addr1);
+        (,ori0,eff0,total)=getState(_addr0);
+        (,ori1,eff1,total)=getState(_addr1);
     }
     
-    function getMyState() public view returns(uint256 ori,uint256 eff,uint256 total) {
-        (ori,eff,total)=getState(msg.sender);
+    function getMyState() public view returns(bool free,uint256 ori,uint256 eff,uint256 total) {
+        (free,ori,eff,total)=getState(msg.sender);
         if(eff==0) {
             return;
         }
