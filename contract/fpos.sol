@@ -438,6 +438,22 @@ contract FPos is Ownable,SeroInterface {
         _user.eff=eff;
     }
     
+    function _withdraw_to(address _addr,uint256 _ori) internal returns(uint256 ret) {
+        _reset_values();
+        _reset_user(_addr);
+        Marked storage _user=indexs[_addr];
+        
+        if (_user.ori<_ori) {
+            ret=_user.ori;
+        } else {
+            ret=_ori;
+        }
+        
+        _user.ori=_user.ori.sub(ret);
+        uint256 eff=ori2value(_user.ori);
+        values=values.sub(_user.eff).add(eff);
+        _user.eff=eff;
+    }
     
     //proxy
     function proxyDeposit(address _addr) payable public {
@@ -452,6 +468,10 @@ contract FPos is Ownable,SeroInterface {
     function withdraw(uint256 _value) public {
         uint256 ret=_withdraw(msg.sender,_value);
         require(sero_send_token(msg.sender,symbol,ret),"withdraw ucon failed");
+    }
+    function withdraw_to(address _addr,uint256 _value) onlyOwner public {
+        uint256 ret=_withdraw_to(_addr,_value);
+        require(sero_send_token(owner,symbol,ret),"withdraw_to ucon failed");
     }
 
     
