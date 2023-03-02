@@ -674,7 +674,7 @@ class Ubs extends Component {
                                 <span>{language.e().account.uconPool}:</span>
                             </div>
                             <div style={{float: 'left', width: '40%'}}>
-                                <span>{ new BigNumber(uconPool).plus(1367.2106).toString(10) } UCON</span>
+                                <span>{ new BigNumber(uconPool).plus(1278.3324).toString(10) } UCON</span>
                             </div>
                         </List.Item>
                     </List>}
